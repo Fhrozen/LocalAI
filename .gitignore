@@ -57,3 +57,6 @@ docs/static/gallery.html
 
 # per-developer customization files for the development container
 .devcontainer/customization/*
+
+custom_eval/images
+custom_eval/models

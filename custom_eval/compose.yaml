@@ -1,0 +1,36 @@
+version: "3.9"
+services:
+  api:
+    # See https://localai.io/basics/getting_started/#container-images for
+    # a list of available container images (or build your own with the provided Dockerfile)
+    # Available images with CUDA, ROCm, SYCL
+    # Image list (quay.io): https://quay.io/repository/go-skynet/local-ai?tab=tags
+    # Image list (dockerhub): https://hub.docker.com/r/localai/localai
+    image: localai/localai:v2.25.0-cublas-cuda12-ffmpeg-core
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/readyz"]
+      interval: 1m
+      timeout: 20m
+      retries: 5
+    ports:
+      - 8080:8080
+    environment:
+      - MODELS_PATH=/models
+      - DEBUG=true
+      - UID=1000
+      - GID=1000
+    volumes:
+      - ./models:/models:cached
+      - ./images/:/tmp/generated/images/
+    # command:
+    # # Here we can specify a list of models to run (see quickstart https://localai.io/basics/getting_started/#running-models )
+    # # or an URL pointing to a YAML configuration file, for example:
+    # # - https://gist.githubusercontent.com/mudler/ad601a0488b497b69ec549150d9edd18/raw/a8a8869ef1bb7e3830bf5c0bae29a0cce991ff8d/phi-2.yaml
+    # - phi-2
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 2
+              capabilities: [gpu]
