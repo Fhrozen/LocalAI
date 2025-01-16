@@ -1,134 +1,18 @@
 ---
-- &phi4
-  url: "github:mudler/LocalAI/gallery/phi-4-chat.yaml@master"
-  name: "phi-4"
-  license: mit
-  tags:
-    - llm
-    - gguf
-    - phi
-    - cpu
-    - gpu
-    - text-generation
+- name: "moe-girl-1ba-7bt-i1"
+  icon: https://cdn-uploads.huggingface.co/production/uploads/634262af8d8089ebaefd410e/kTXXSSSqpb21rfyOX7FUa.jpeg
+  # chatml
+  url: "github:mudler/LocalAI/gallery/chatml.yaml@master"
   urls:
-    - https://huggingface.co/microsoft/phi-4
-    - https://huggingface.co/bartowski/phi-4-GGUF
+    - https://huggingface.co/allura-org/MoE-Girl-1BA-7BT
+    - https://huggingface.co/mradermacher/MoE-Girl-1BA-7BT-i1-GGUF
   description: |
-    phi-4 is a state-of-the-art open model built upon a blend of synthetic datasets, data from filtered public domain websites, and acquired academic books and Q&A datasets. The goal of this approach was to ensure that small capable models were trained with data focused on high quality and advanced reasoning.
-    phi-4 underwent a rigorous enhancement and alignment process, incorporating both supervised fine-tuning and direct preference optimization to ensure precise instruction adherence and robust safety measures. Phi-4 is a 14B parameters, dense decoder-only Transformer model.
+    A finetune of OLMoE by AllenAI designed for roleplaying (and maybe general usecases if you try hard enough).
+    PLEASE do not expect godliness out of this, it's a model with 1 billion active parameters. Expect something more akin to Gemma 2 2B, not Llama 3 8B.
   overrides:
     parameters:
-      model: phi-4-Q4_K_M.gguf
+      model: MoE-Girl-1BA-7BT.i1-Q4_K_M.gguf
   files:
-    - filename: phi-4-Q4_K_M.gguf
-      uri: huggingface://bartowski/phi-4-GGUF/phi-4-Q4_K_M.gguf
-      sha256: 009aba717c09d4a35890c7d35eb59d54e1dba884c7c526e7197d9c13ab5911d9
-- &falcon3
-  name: "falcon3-1b-instruct"
-  url: "github:mudler/LocalAI/gallery/falcon3.yaml@master"
-  icon: https://huggingface.co/datasets/tiiuae/documentation-images/resolve/main/general/falco3-logo.png
-  urls:
-    - https://huggingface.co/tiiuae/Falcon3-1B-Instruct
-    - https://huggingface.co/bartowski/Falcon3-1B-Instruct-GGUF
-  description: |
-    Falcon3 family of Open Foundation Models is a set of pretrained and instruct LLMs ranging from 1B to 10B parameters.
-
-    This repository contains the Falcon3-1B-Instruct. It achieves strong results on reasoning, language understanding, instruction following, code and mathematics tasks. Falcon3-1B-Instruct supports 4 languages (English, French, Spanish, Portuguese) and a context length of up to 8K.
-  overrides:
-    parameters:
-      model: Falcon3-1B-Instruct-Q4_K_M.gguf
-  files:
-    - filename: Falcon3-1B-Instruct-Q4_K_M.gguf
-      uri: huggingface://bartowski/Falcon3-1B-Instruct-GGUF/Falcon3-1B-Instruct-Q4_K_M.gguf
-      sha256: 1c92013dac1ab6e703e787f3e0829ca03cc95311e4c113a77950d15ff6dea7b3
-  tags:
-    - llm
-    - gguf
-    - gpu
-    - cpu
-    - falcon
-  license: falcon-llm
-- !!merge <<: *falcon3
-  name: "falcon3-3b-instruct"
-  urls:
-    - https://huggingface.co/tiiuae/Falcon3-3B-Instruct
-    - https://huggingface.co/bartowski/Falcon3-3B-Instruct-GGUF
-  overrides:
-    parameters:
-      model: Falcon3-3B-Instruct-Q4_K_M.gguf
-  files:
-    - filename: Falcon3-3B-Instruct-Q4_K_M.gguf
-      uri: huggingface://bartowski/Falcon3-3B-Instruct-GGUF/Falcon3-3B-Instruct-Q4_K_M.gguf
-      sha256: 6ea6cecba144fe5b711ca07ae4263ccdf6ee6419807a46220419189da8446557
-- !!merge <<: *falcon3
-  name: "falcon3-10b-instruct"
-  urls:
-    - https://huggingface.co/tiiuae/Falcon3-10B-Instruct
-    - https://huggingface.co/bartowski/Falcon3-10B-Instruct-GGUF
-  overrides:
-    parameters:
-      model: Falcon3-10B-Instruct-Q4_K_M.gguf
-  files:
-    - filename: Falcon3-10B-Instruct-Q4_K_M.gguf
-      uri: huggingface://bartowski/Falcon3-10B-Instruct-GGUF/Falcon3-10B-Instruct-Q4_K_M.gguf
-      sha256: 0a33327bd71e1788a8e9f17889824a17a65efd3f96a4b2a5e2bc6ff2f39b8241
-- !!merge <<: *falcon3
-  name: "falcon3-1b-instruct-abliterated"
-  urls:
-    - https://huggingface.co/huihui-ai/Falcon3-1B-Instruct-abliterated
-    - https://huggingface.co/bartowski/Falcon3-1B-Instruct-abliterated-GGUF
-  description: |
-    This is an uncensored version of tiiuae/Falcon3-1B-Instruct created with abliteration (see remove-refusals-with-transformers to know more about it).
-    This is a crude, proof-of-concept implementation to remove refusals from an LLM model without using TransformerLens.
-  overrides:
-    parameters:
-      model: Falcon3-1B-Instruct-abliterated-Q4_K_M.gguf
-  files:
-    - filename: Falcon3-1B-Instruct-abliterated-Q4_K_M.gguf
-      sha256: 416d15ce58334b7956818befb088d46c1e3e7153ebf2da2fb9769a5b1ff934a1
-      uri: huggingface://bartowski/Falcon3-1B-Instruct-abliterated-GGUF/Falcon3-1B-Instruct-abliterated-Q4_K_M.gguf
-- !!merge <<: *falcon3
-  name: "falcon3-3b-instruct-abliterated"
-  urls:
-    - https://huggingface.co/huihui-ai/Falcon3-3B-Instruct-abliterated
-    - https://huggingface.co/bartowski/Falcon3-3B-Instruct-abliterated-GGUF
-  description: |
-    This is an uncensored version of tiiuae/Falcon3-3B-Instruct created with abliteration (see remove-refusals-with-transformers to know more about it).
-    This is a crude, proof-of-concept implementation to remove refusals from an LLM model without using TransformerLens.
-  overrides:
-    parameters:
-      model: Falcon3-3B-Instruct-abliterated-Q4_K_M.gguf
-  files:
-    - filename: Falcon3-3B-Instruct-abliterated-Q4_K_M.gguf
-      sha256: 83773b77b0e34ef115f8a6508192e9f1d3426a61456744493f65cfe1e7f90aa9
-      uri: huggingface://bartowski/Falcon3-3B-Instruct-abliterated-GGUF/Falcon3-3B-Instruct-abliterated-Q4_K_M.gguf
-- !!merge <<: *falcon3
-  name: "falcon3-10b-instruct-abliterated"
-  urls:
-    - https://huggingface.co/huihui-ai/Falcon3-10B-Instruct-abliterated
-    - https://huggingface.co/bartowski/Falcon3-10B-Instruct-abliterated-GGUF
-  description: |
-    This is an uncensored version of tiiuae/Falcon3-10B-Instruct created with abliteration (see remove-refusals-with-transformers to know more about it).
-    This is a crude, proof-of-concept implementation to remove refusals from an LLM model without using TransformerLens.
-  overrides:
-    parameters:
-      model: Falcon3-10B-Instruct-abliterated-Q4_K_M.gguf
-  files:
-    - filename: Falcon3-10B-Instruct-abliterated-Q4_K_M.gguf
-      sha256: 5940df2ff88e5be93dbe0766b2a9683d7e73c204a69a1348a37f835cf2b5f767
-      uri: huggingface://bartowski/Falcon3-10B-Instruct-abliterated-GGUF/Falcon3-10B-Instruct-abliterated-Q4_K_M.gguf
-- !!merge <<: *falcon3
-  name: "falcon3-7b-instruct-abliterated"
-  urls:
-    - https://huggingface.co/huihui-ai/Falcon3-7B-Instruct-abliterated
-    - https://huggingface.co/bartowski/Falcon3-7B-Instruct-abliterated-GGUF
-  description: |
-    This is an uncensored version of tiiuae/Falcon3-7B-Instruct created with abliteration (see remove-refusals-with-transformers to know more about it).
-    This is a crude, proof-of-concept implementation to remove refusals from an LLM model without using TransformerLens.
-  overrides:
-    parameters:
-      model: Falcon3-7B-Instruct-abliterated-Q4_K_M.gguf
-  files:
-    - filename: Falcon3-7B-Instruct-abliterated-Q4_K_M.gguf
-      sha256: 68e10e638668acaa49fb7919224c7d8bcf1798126c7a499c4d9ec3b81313f8c8
-      uri: huggingface://bartowski/Falcon3-7B-Instruct-abliterated-GGUF/Falcon3-7B-Instruct-abliterated-Q4_K_M.gguf
+    - filename: MoE-Girl-1BA-7BT.i1-Q4_K_M.gguf
+      sha256: e6ef9c311c73573b243de6ff7538b386f430af30b2be0a96a5745c17137ad432
+      uri: huggingface://mradermacher/MoE-Girl-1BA-7BT-i1-GGUF/MoE-Girl-1BA-7BT.i1-Q4_K_M.gguf
