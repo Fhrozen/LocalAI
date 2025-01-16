@@ -10,7 +10,7 @@
     A finetune of OLMoE by AllenAI designed for roleplaying (and maybe general usecases if you try hard enough).
     PLEASE do not expect godliness out of this, it's a model with 1 billion active parameters. Expect something more akin to Gemma 2 2B, not Llama 3 8B.
   overrides:
-    parameters:
+    - parameters:
       model: MoE-Girl-1BA-7BT.i1-Q4_K_M.gguf
   files:
     - filename: MoE-Girl-1BA-7BT.i1-Q4_K_M.gguf
