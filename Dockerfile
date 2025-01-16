@@ -380,7 +380,7 @@ RUN go install github.com/mikefarah/yq/v4@latest
 
 # This is the final target. The result of this target will be the image uploaded to the registry.
 # If you cannot find a more suitable place for an addition, this layer is a suitable place for it.
-FROM requirements-drivers
+FROM requirements-drivers as final-build
 
 ARG FFMPEG
 ARG BUILD_TYPE
