@@ -39,7 +39,7 @@
 </p>
 
 <p align="center">
-<a href="https://trendshift.io/repositories/1484" target="_blank"><img src="https://trendshift.io/api/badge/repositories/1484" alt="go-skynet%2FLocalAI | Trendshift" style="width: 250px; height: 55px;" width="250" height="55"/></a>
+<a href="https://trendshift.io/repositories/5539" target="_blank"><img src="https://trendshift.io/api/badge/repositories/5539" alt="mudler%2FLocalAI | Trendshift" style="width: 250px; height: 55px;" width="250" height="55"/></a>
 </p>
 
 > :bulb: Get help - [❓FAQ](https://localai.io/faq/) [💭Discussions](https://github.com/go-skynet/LocalAI/discussions) [:speech_balloon: Discord](https://discord.gg/uJAeKSAGDy) [:book: Documentation website](https://localai.io/)
@@ -92,7 +92,7 @@ local-ai run oci://localai/phi-2:latest
 
 ## 📰 Latest project news
 
-- January 2025: SANA support in diffusers: https://github.com/mudler/LocalAI/pull/4603
+- Jan 2025: LocalAI model release: https://huggingface.co/mudler/LocalAI-functioncall-phi-4-v0.3, SANA support in diffusers: https://github.com/mudler/LocalAI/pull/4603
 - Dec 2024: stablediffusion.cpp backend (ggml) added ( https://github.com/mudler/LocalAI/pull/4289 )
 - Nov 2024: Bark.cpp backend added ( https://github.com/mudler/LocalAI/pull/4287 )
 - Nov 2024: Voice activity detection models (**VAD**) added to the API: https://github.com/mudler/LocalAI/pull/4204

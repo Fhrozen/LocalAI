@@ -23,6 +23,9 @@ type OpenAIUsage struct {
 	PromptTokens     int `json:"prompt_tokens"`
 	CompletionTokens int `json:"completion_tokens"`
 	TotalTokens      int `json:"total_tokens"`
+	// Extra timing data, disabled by default as is't not a part of OpenAI specification
+	TimingPromptProcessing float64 `json:"timing_prompt_processing,omitempty"`
+	TimingTokenGeneration  float64 `json:"timing_token_generation,omitempty"`
 }
 
 type Item struct {
@@ -188,8 +191,9 @@ type OpenAIRequest struct {
 	Stream bool `json:"stream"`
 
 	// Image (not supported by OpenAI)
-	Mode int `json:"mode"`
-	Step int `json:"step"`
+	Mode    int    `json:"mode"`
+	Quality string `json:"quality"`
+	Step    int    `json:"step"`
 
 	// A grammar to constrain the LLM output
 	Grammar string `json:"grammar" yaml:"grammar"`

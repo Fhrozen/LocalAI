@@ -570,6 +570,8 @@ definitions:
         type: number
       prompt:
         description: Prompt is read only by completion/image API calls
+      quality:
+        type: string
       repeat_last_n:
         type: integer
       repeat_penalty:
@@ -646,6 +648,12 @@ definitions:
         type: integer
       prompt_tokens:
         type: integer
+      timing_prompt_processing:
+        description: Extra timing data, disabled by default as is't not a part of
+          OpenAI specification
+        type: number
+      timing_token_generation:
+        type: number
       total_tokens:
         type: integer
     type: object

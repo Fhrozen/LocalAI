@@ -22,10 +22,22 @@ import (
 )
 
 var Aliases map[string]string = map[string]string{
-	"go-llama":              LLamaCPP,
-	"llama":                 LLamaCPP,
-	"embedded-store":        LocalStoreBackend,
-	"langchain-huggingface": LCHuggingFaceBackend,
+	"go-llama":               LLamaCPP,
+	"llama":                  LLamaCPP,
+	"embedded-store":         LocalStoreBackend,
+	"huggingface-embeddings": TransformersBackend,
+	"langchain-huggingface":  LCHuggingFaceBackend,
+	"transformers-musicgen":  TransformersBackend,
+	"sentencetransformers":   TransformersBackend,
+	"mamba":                  TransformersBackend,
+	"stablediffusion":        StableDiffusionGGMLBackend,
+}
+
+var TypeAlias map[string]string = map[string]string{
+	"sentencetransformers":   "SentenceTransformer",
+	"huggingface-embeddings": "SentenceTransformer",
+	"mamba":                  "Mamba",
+	"transformers-musicgen":  "MusicgenForConditionalGeneration",
 }
 
 var AutoDetect = os.Getenv("DISABLE_AUTODETECT") != "true"
@@ -36,6 +48,7 @@ const (
 	LLamaCPP = "llama-cpp"
 
 	LLamaCPPAVX2     = "llama-cpp-avx2"
+	LLamaCPPAVX512   = "llama-cpp-avx512"
 	LLamaCPPAVX      = "llama-cpp-avx"
 	LLamaCPPFallback = "llama-cpp-fallback"
 	LLamaCPPCUDA     = "llama-cpp-cuda"
@@ -45,14 +58,26 @@ const (
 
 	LLamaCPPGRPC = "llama-cpp-grpc"
 
-	WhisperBackend         = "whisper"
-	StableDiffusionBackend = "stablediffusion"
-	TinyDreamBackend       = "tinydream"
-	PiperBackend           = "piper"
-	LCHuggingFaceBackend   = "huggingface"
+	WhisperBackend             = "whisper"
+	StableDiffusionGGMLBackend = "stablediffusion-ggml"
+	PiperBackend               = "piper"
+	LCHuggingFaceBackend       = "huggingface"
 
-	LocalStoreBackend = "local-store"
+	TransformersBackend = "transformers"
+	LocalStoreBackend   = "local-store"
 )
+
+var llamaCPPVariants = []string{
+	LLamaCPPAVX2,
+	LLamaCPPAVX512,
+	LLamaCPPAVX,
+	LLamaCPPFallback,
+	LLamaCPPCUDA,
+	LLamaCPPHipblas,
+	LLamaCPPSycl16,
+	LLamaCPPSycl32,
+	LLamaCPPGRPC,
+}
 
 func backendPath(assetDir, backend string) string {
 	return filepath.Join(assetDir, "backend-assets", "grpc", backend)
@@ -95,40 +120,14 @@ ENTRY:
 	if AutoDetect {
 		// if we find the llama.cpp variants, show them of as a single backend (llama-cpp) as later we are going to pick that up
 		// when starting the service
-		foundLCPPAVX, foundLCPPAVX2, foundLCPPFallback, foundLCPPGRPC, foundLCPPCuda, foundLCPPHipblas, foundSycl16, foundSycl32 := false, false, false, false, false, false, false, false
+		foundVariants := map[string]bool{}
 		if _, ok := backends[LLamaCPP]; !ok {
 			for _, e := range entry {
-				if strings.Contains(e.Name(), LLamaCPPAVX2) && !foundLCPPAVX2 {
-					backends[LLamaCPP] = append(backends[LLamaCPP], LLamaCPPAVX2)
-					foundLCPPAVX2 = true
-				}
-				if strings.Contains(e.Name(), LLamaCPPAVX) && !foundLCPPAVX {
-					backends[LLamaCPP] = append(backends[LLamaCPP], LLamaCPPAVX)
-					foundLCPPAVX = true
-				}
-				if strings.Contains(e.Name(), LLamaCPPFallback) && !foundLCPPFallback {
-					backends[LLamaCPP] = append(backends[LLamaCPP], LLamaCPPFallback)
-					foundLCPPFallback = true
-				}
-				if strings.Contains(e.Name(), LLamaCPPGRPC) && !foundLCPPGRPC {
-					backends[LLamaCPP] = append(backends[LLamaCPP], LLamaCPPGRPC)
-					foundLCPPGRPC = true
-				}
-				if strings.Contains(e.Name(), LLamaCPPCUDA) && !foundLCPPCuda {
-					backends[LLamaCPP] = append(backends[LLamaCPP], LLamaCPPCUDA)
-					foundLCPPCuda = true
-				}
-				if strings.Contains(e.Name(), LLamaCPPHipblas) && !foundLCPPHipblas {
-					backends[LLamaCPP] = append(backends[LLamaCPP], LLamaCPPHipblas)
-					foundLCPPHipblas = true
-				}
-				if strings.Contains(e.Name(), LLamaCPPSycl16) && !foundSycl16 {
-					backends[LLamaCPP] = append(backends[LLamaCPP], LLamaCPPSycl16)
-					foundSycl16 = true
-				}
-				if strings.Contains(e.Name(), LLamaCPPSycl32) && !foundSycl32 {
-					backends[LLamaCPP] = append(backends[LLamaCPP], LLamaCPPSycl32)
-					foundSycl32 = true
+				for _, v := range llamaCPPVariants {
+					if strings.Contains(e.Name(), v) && !foundVariants[v] {
+						backends[LLamaCPP] = append(backends[LLamaCPP], v)
+						foundVariants[v] = true
+					}
 				}
 			}
 		}
@@ -271,6 +270,12 @@ func selectGRPCProcessByHostCapabilities(backend, assetDir string, f16 bool) str
 			log.Info().Msgf("[%s] attempting to load with AVX2 variant", backend)
 			selectedProcess = p
 		}
+	} else if xsysinfo.HasCPUCaps(cpuid.AVX512F) {
+		p := backendPath(assetDir, LLamaCPPAVX512)
+		if _, err := os.Stat(p); err == nil {
+			log.Info().Msgf("[%s] attempting to load with AVX512 variant", backend)
+			selectedProcess = p
+		}
 	} else if xsysinfo.HasCPUCaps(cpuid.AVX) {
 		p := backendPath(assetDir, LLamaCPPAVX)
 		if _, err := os.Stat(p); err == nil {
@@ -394,6 +399,7 @@ func (ml *ModelLoader) grpcModel(backend string, autodetect bool, o *Options) fu
 		}
 
 		log.Debug().Msgf("Wait for the service to start up")
+		log.Debug().Msgf("Options: %+v", o.gRPCOptions)
 
 		// Wait for the service to start up
 		ready := false
@@ -458,8 +464,15 @@ func (ml *ModelLoader) backendLoader(opts ...Option) (client grpc.Backend, err e
 
 	backend := strings.ToLower(o.backendString)
 	if realBackend, exists := Aliases[backend]; exists {
+		typeAlias, exists := TypeAlias[backend]
+		if exists {
+			log.Debug().Msgf("'%s' is a type alias of '%s' (%s)", backend, realBackend, typeAlias)
+			o.gRPCOptions.Type = typeAlias
+		} else {
+			log.Debug().Msgf("'%s' is an alias of '%s'", backend, realBackend)
+		}
+
 		backend = realBackend
-		log.Debug().Msgf("%s is an alias of %s", backend, realBackend)
 	}
 
 	ml.stopActiveBackends(o.modelID, o.singleActiveBackend)

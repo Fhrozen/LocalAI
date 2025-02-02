@@ -44,8 +44,6 @@ type ApplicationConfig struct {
 	DisableGalleryEndpoint             bool
 	LoadToMemory                       []string
 
-	ModelLibraryURL string
-
 	Galleries []Gallery
 
 	BackendAssets     embed.FS
@@ -65,6 +63,8 @@ type ApplicationConfig struct {
 	ModelsURL []string
 
 	WatchDogBusyTimeout, WatchDogIdleTimeout time.Duration
+
+	MachineTag string
 }
 
 type AppOption func(*ApplicationConfig)
@@ -94,6 +94,12 @@ func WithModelPath(path string) AppOption {
 	}
 }
 
+func WithMachineTag(tag string) AppOption {
+	return func(o *ApplicationConfig) {
+		o.MachineTag = tag
+	}
+}
+
 func WithCors(b bool) AppOption {
 	return func(o *ApplicationConfig) {
 		o.CORS = b
@@ -115,12 +121,6 @@ func WithCsrf(b bool) AppOption {
 func WithP2PToken(s string) AppOption {
 	return func(o *ApplicationConfig) {
 		o.P2PToken = s
-	}
-}
-
-func WithModelLibraryURL(url string) AppOption {
-	return func(o *ApplicationConfig) {
-		o.ModelLibraryURL = url
 	}
 }
 
