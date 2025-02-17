@@ -765,6 +765,17 @@ const docTemplate = `{
         "/v1/tokenize": {
             "post": {
                 "summary": "Tokenize the input.",
+                "parameters": [
+                    {
+                        "description": "Request",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/schema.TokenizeRequest"
+                        }
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "Response",
@@ -1410,6 +1421,9 @@ const docTemplate = `{
         "schema.JINARerankRequest": {
             "type": "object",
             "properties": {
+                "backend": {
+                    "type": "string"
+                },
                 "documents": {
                     "type": "array",
                     "items": {
@@ -1619,7 +1633,6 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "model": {
-                    "description": "Also part of the OpenAI official spec",
                     "type": "string"
                 },
                 "model_base_name": {
@@ -1825,7 +1838,6 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "model": {
-                    "description": "model name or full path",
                     "type": "string"
                 },
                 "response_format": {
@@ -1834,6 +1846,17 @@ const docTemplate = `{
                 },
                 "voice": {
                     "description": "voice audio file or speaker id",
+                    "type": "string"
+                }
+            }
+        },
+        "schema.TokenizeRequest": {
+            "type": "object",
+            "properties": {
+                "content": {
+                    "type": "string"
+                },
+                "model": {
                     "type": "string"
                 }
             }
@@ -1878,7 +1901,6 @@ const docTemplate = `{
                     }
                 },
                 "model": {
-                    "description": "model name or full path",
                     "type": "string"
                 }
             }

@@ -468,6 +468,9 @@ struct llama_server_context
     bool add_bos_token      = true;
     bool has_eos_token      = true;
 
+    bool grammar_lazy = false;
+    std::vector<common_grammar_trigger> grammar_trigger_words;
+
     int32_t n_ctx;  // total context for all clients / slots
 
     // system prompt
@@ -706,6 +709,8 @@ struct llama_server_context
         slot->sparams.grammar           = json_value(data, "grammar",           default_sparams.grammar);
         slot->sparams.n_probs           = json_value(data, "n_probs",           default_sparams.n_probs);
         slot->sparams.min_keep          = json_value(data, "min_keep",          default_sparams.min_keep);
+        slot->sparams.grammar_trigger_words = grammar_trigger_words;
+        slot->sparams.grammar_lazy = grammar_lazy;
 
         if (slot->n_predict > 0 && slot->params.n_predict > slot->n_predict) {
             // Might be better to reject the request with a 400 ?
@@ -1148,6 +1153,14 @@ struct llama_server_context
         {
             slot.stopped_limit = true;
             slot.has_next_token = false;
+        }
+
+        if (slot.n_past >= slot.n_ctx) {
+            slot.truncated      = true;
+            slot.stopped_limit = true;
+            slot.has_next_token = false;
+
+            LOG_VERBOSE("stopped due to running out of context capacity", {});
         }
 
         if (result.tok == llama_vocab_eos(vocab) || llama_vocab_is_eog(vocab, result.tok))
@@ -1622,17 +1635,17 @@ struct llama_server_context
             {
                 if (slot.is_processing() && system_tokens.size() + slot.cache_tokens.size() >= (size_t) slot.n_ctx)
                 {
+                    // this check is redundant (for good)
+                    // we should never get here, because generation should already stopped in process_token()
+
                     // START LOCALAI changes
                     // Temporary disable context-shifting as it can lead to infinite loops (issue: https://github.com/ggerganov/llama.cpp/issues/3969)
                     // See: https://github.com/mudler/LocalAI/issues/1333
                     // Context is exhausted, release the slot
                     slot.release();
                     send_final_response(slot);
-                    slot.cache_tokens.clear();
-                    slot.n_past = 0;
-                    slot.truncated = false;
-                    slot.has_next_token = true;
-                    LOG("Context exhausted. Slot %d released (%d tokens in cache)\n", slot.id, (int) slot.cache_tokens.size());
+                    slot.has_next_token = false;
+                    LOG_ERROR("context is exhausted, release the slot", {});
 
                     continue;
                     // END LOCALAI changes
@@ -2374,6 +2387,21 @@ static void params_parse(const backend::ModelOptions* request,
     if ( request->ropefreqscale() != 0.0f ) {
         params.rope_freq_scale = request->ropefreqscale();
     }
+
+    if (request->grammartriggers_size() > 0) {
+        LOG_INFO("configuring grammar triggers", {});
+        llama.grammar_lazy = true;
+        for (int i = 0; i < request->grammartriggers_size(); i++) {
+            common_grammar_trigger trigger;
+            trigger.word = request->grammartriggers(i).word();
+            trigger.at_start = request->grammartriggers(i).at_start();
+            llama.grammar_trigger_words.push_back(trigger);
+            LOG_INFO("grammar trigger", {
+                { "word", trigger.word },
+                { "at_start", trigger.at_start }
+            });
+        }
+    }
 }
 
 
@@ -2518,6 +2546,18 @@ public:
         {
             return grpc::Status::OK;
         }
+
+        return grpc::Status::OK;
+    }
+
+    grpc::Status TokenizeString(ServerContext* context, const backend::PredictOptions* request, backend::TokenizationResponse* response){
+         json data = parse_options(false, request, llama);
+
+         std::vector<llama_token> tokens = llama.tokenize(data["prompt"],false);
+
+         for (int i=0 ; i< tokens.size(); i++){
+            response->add_tokens(tokens[i]);
+         }
 
         return grpc::Status::OK;
     }

@@ -43,8 +43,6 @@ var TypeAlias map[string]string = map[string]string{
 var AutoDetect = os.Getenv("DISABLE_AUTODETECT") != "true"
 
 const (
-	LlamaGGML = "llama-ggml"
-
 	LLamaCPP = "llama-cpp"
 
 	LLamaCPPAVX2     = "llama-cpp-avx2"
@@ -143,10 +141,10 @@ func orderBackends(backends map[string][]string) ([]string, error) {
 
 	// sets a priority list - first has more priority
 	priorityList := []string{
-		// First llama.cpp(variants) and llama-ggml to follow.
+		// First llama.cpp(variants)
 		// We keep the fallback to prevent that if the llama.cpp variants
 		// that depends on shared libs if breaks have still a safety net.
-		LLamaCPP, LlamaGGML, LLamaCPPFallback,
+		LLamaCPP, LLamaCPPFallback,
 	}
 
 	toTheEnd := []string{
@@ -264,16 +262,16 @@ func selectGRPCProcessByHostCapabilities(backend, assetDir string, f16 bool) str
 	}
 
 	// IF we find any optimized binary, we use that
-	if xsysinfo.HasCPUCaps(cpuid.AVX2) {
-		p := backendPath(assetDir, LLamaCPPAVX2)
-		if _, err := os.Stat(p); err == nil {
-			log.Info().Msgf("[%s] attempting to load with AVX2 variant", backend)
-			selectedProcess = p
-		}
-	} else if xsysinfo.HasCPUCaps(cpuid.AVX512F) {
+	if xsysinfo.HasCPUCaps(cpuid.AVX512F) {
 		p := backendPath(assetDir, LLamaCPPAVX512)
 		if _, err := os.Stat(p); err == nil {
 			log.Info().Msgf("[%s] attempting to load with AVX512 variant", backend)
+			selectedProcess = p
+		}
+	} else if xsysinfo.HasCPUCaps(cpuid.AVX2) {
+		p := backendPath(assetDir, LLamaCPPAVX2)
+		if _, err := os.Stat(p); err == nil {
+			log.Info().Msgf("[%s] attempting to load with AVX2 variant", backend)
 			selectedProcess = p
 		}
 	} else if xsysinfo.HasCPUCaps(cpuid.AVX) {
@@ -460,7 +458,7 @@ func (ml *ModelLoader) ListAvailableBackends(assetdir string) ([]string, error) 
 func (ml *ModelLoader) backendLoader(opts ...Option) (client grpc.Backend, err error) {
 	o := NewOptions(opts...)
 
-	log.Info().Msgf("Loading model '%s' with backend %s", o.modelID, o.backendString)
+	log.Info().Str("modelID", o.modelID).Str("backend", o.backendString).Str("o.model", o.model).Msg("BackendLoader starting")
 
 	backend := strings.ToLower(o.backendString)
 	if realBackend, exists := Aliases[backend]; exists {
