@@ -6,7 +6,7 @@ BINARY_NAME=local-ai
 DETECT_LIBS?=true
 
 # llama.cpp versions
-CPPLLAMA_VERSION?=2eea03d86a2d132c8245468c26290ce07a27a8e8
+CPPLLAMA_VERSION?=f4c3dd5daa3a79f713813cf1aabdc5886071061d
 
 # whisper.cpp version
 WHISPER_REPO?=https://github.com/ggerganov/whisper.cpp
@@ -22,7 +22,7 @@ BARKCPP_VERSION?=v1.0.0
 
 # stablediffusion.cpp (ggml)
 STABLEDIFFUSION_GGML_REPO?=https://github.com/leejet/stable-diffusion.cpp
-STABLEDIFFUSION_GGML_VERSION?=d46ed5e184b97c2018dc2e8105925bdb8775e02c
+STABLEDIFFUSION_GGML_VERSION?=19d876ee300a055629926ff836489901f734f2b7
 
 ONNX_VERSION?=1.20.0
 ONNX_ARCH?=x64

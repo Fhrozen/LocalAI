@@ -467,9 +467,10 @@ struct llama_server_context
     bool all_slots_are_idle = false;
     bool add_bos_token      = true;
     bool has_eos_token      = true;
+    bool has_gpu = false;
 
     bool grammar_lazy = false;
-    std::vector<common_grammar_trigger> grammar_trigger_words;
+    std::vector<common_grammar_trigger> grammar_triggers;
 
     int32_t n_ctx;  // total context for all clients / slots
 
@@ -511,7 +512,10 @@ struct llama_server_context
         if (!params.mmproj.empty()) {
             multimodal = true;
             LOG_INFO("Multi Modal Mode Enabled", {});
-            clp_ctx = clip_model_load(params.mmproj.c_str(), /*verbosity=*/ 1);
+            clp_ctx = clip_init(params.mmproj.c_str(), clip_context_params {
+                /* use_gpu */ has_gpu,
+                /*verbosity=*/ 1,
+            });
             if(clp_ctx == nullptr) {
                 LOG_ERR("unable to load clip model: %s", params.mmproj.c_str());
                 return false;
@@ -709,7 +713,7 @@ struct llama_server_context
         slot->sparams.grammar           = json_value(data, "grammar",           default_sparams.grammar);
         slot->sparams.n_probs           = json_value(data, "n_probs",           default_sparams.n_probs);
         slot->sparams.min_keep          = json_value(data, "min_keep",          default_sparams.min_keep);
-        slot->sparams.grammar_trigger_words = grammar_trigger_words;
+        slot->sparams.grammar_triggers = grammar_triggers;
         slot->sparams.grammar_lazy = grammar_lazy;
 
         if (slot->n_predict > 0 && slot->params.n_predict > slot->n_predict) {
@@ -1350,7 +1354,7 @@ struct llama_server_context
         queue_results.send(res);
     }
 
-    void send_embedding(llama_client_slot &slot)
+    void send_embedding(llama_client_slot &slot, const llama_batch & batch)
     {
         task_result res;
         res.id = slot.task_id;
@@ -1372,10 +1376,38 @@ struct llama_server_context
         else
         {
             const float *data = llama_get_embeddings(ctx);
-            std::vector<float> embedding(data, data + n_embd);
+            std::vector<float> embd_res(n_embd, 0.0f);
+            std::vector<std::vector<float>> embedding;
+            for (int i = 0; i < batch.n_tokens; ++i) {
+                if (!batch.logits[i] || batch.seq_id[i][0] != slot.id) {
+                    continue;
+                }
+
+                const float * embd = llama_get_embeddings_seq(ctx, batch.seq_id[i][0]);
+                if (embd == NULL) {
+                    embd = llama_get_embeddings_ith(ctx, i);
+                }
+
+                if (embd == NULL) {
+                    LOG("failed to get embeddings");
+
+                    continue;
+                }
+
+                // normalize only when there is pooling
+                // TODO: configurable
+                if (llama_pooling_type(ctx) != LLAMA_POOLING_TYPE_NONE) {
+                    common_embd_normalize(embd, embd_res.data(), n_embd, 2);
+                    embedding.push_back(embd_res);
+                } else {
+                    embedding.push_back({ embd, embd + n_embd });
+                }
+            }
+
+            // OAI compat
             res.result_json = json
             {
-                {"embedding", embedding },
+                {"embedding", embedding[0] },
             };
         }
         queue_results.send(res);
@@ -1996,7 +2028,7 @@ struct llama_server_context
                 // prompt evaluated for embedding
                 if (slot.embedding)
                 {
-                    send_embedding(slot);
+                    send_embedding(slot, batch_view);
                     slot.release();
                     slot.i_batch = -1;
                     continue;
@@ -2286,7 +2318,7 @@ static std::string get_all_kv_cache_types() {
 }
 
 static void params_parse(const backend::ModelOptions* request,
-                                common_params & params) {
+                                common_params & params, llama_server_context &llama) {
    
     // this is comparable to: https://github.com/ggerganov/llama.cpp/blob/d9b33fe95bd257b36c84ee5769cc048230067d6f/examples/server/server.cpp#L1809
 
@@ -2324,6 +2356,20 @@ static void params_parse(const backend::ModelOptions* request,
         add_rpc_devices(std::string(llama_grpc_servers));
     }
     
+     // decode options. Options are in form optname:optvale, or if booleans only optname.
+    for (int i = 0; i < request->options_size(); i++) {
+        std::string opt = request->options(i);
+        char *optname = strtok(&opt[0], ":");
+        char *optval = strtok(NULL, ":");
+        if (optval == NULL) {
+            optval = "true";
+        }
+
+        if (!strcmp(optname, "gpu")) {
+            llama.has_gpu = true;
+        }
+    }
+
     // TODO: Add yarn
 
     if (!request->tensorsplit().empty()) {
@@ -2393,12 +2439,12 @@ static void params_parse(const backend::ModelOptions* request,
         llama.grammar_lazy = true;
         for (int i = 0; i < request->grammartriggers_size(); i++) {
             common_grammar_trigger trigger;
-            trigger.word = request->grammartriggers(i).word();
-            trigger.at_start = request->grammartriggers(i).at_start();
-            llama.grammar_trigger_words.push_back(trigger);
+	    trigger.type = COMMON_GRAMMAR_TRIGGER_TYPE_WORD;
+            trigger.value = request->grammartriggers(i).word();
+	    // trigger.at_start = request->grammartriggers(i).at_start();
+            llama.grammar_triggers.push_back(trigger);
             LOG_INFO("grammar trigger", {
-                { "word", trigger.word },
-                { "at_start", trigger.at_start }
+                { "word", trigger.value },
             });
         }
     }
@@ -2417,7 +2463,7 @@ public:
   grpc::Status LoadModel(ServerContext* context, const backend::ModelOptions* request, backend::Result* result) {
     // Implement LoadModel RPC
     common_params params;
-    params_parse(request, params);
+    params_parse(request, params, llama);
 
     llama_backend_init();
     llama_numa_init(params.numa);
