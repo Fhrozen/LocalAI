@@ -50,9 +50,6 @@ type BackendConfig struct {
 	// LLM configs (GPT4ALL, Llama.cpp, ...)
 	LLMConfig `yaml:",inline"`
 
-	// AutoGPTQ specifics
-	AutoGPTQ AutoGPTQ `yaml:"autogptq"`
-
 	// Diffusers
 	Diffusers Diffusers `yaml:"diffusers"`
 	Step      int       `yaml:"step"`
@@ -174,14 +171,6 @@ type LimitMMPerPrompt struct {
 	LimitImagePerPrompt int `yaml:"image"`
 	LimitVideoPerPrompt int `yaml:"video"`
 	LimitAudioPerPrompt int `yaml:"audio"`
-}
-
-// AutoGPTQ is a struct that holds the configuration specific to the AutoGPTQ backend
-type AutoGPTQ struct {
-	ModelBaseName    string `yaml:"model_base_name"`
-	Device           string `yaml:"device"`
-	Triton           bool   `yaml:"triton"`
-	UseFastTokenizer bool   `yaml:"use_fast_tokenizer"`
 }
 
 // TemplateConfig is a struct that holds the configuration of the templating system
@@ -389,16 +378,6 @@ func (cfg *BackendConfig) SetDefaults(opts ...ConfigLoaderOption) {
 		cfg.Embeddings = &falseV
 	}
 
-	// Value passed by the top level are treated as default (no implicit defaults)
-	// defaults are set by the user
-	if ctx == 0 {
-		ctx = 1024
-	}
-
-	if cfg.ContextSize == nil {
-		cfg.ContextSize = &ctx
-	}
-
 	if threads == 0 {
 		// Threads can't be 0
 		threads = 4
@@ -420,7 +399,7 @@ func (cfg *BackendConfig) SetDefaults(opts ...ConfigLoaderOption) {
 		cfg.Debug = &trueV
 	}
 
-	guessDefaultsFromFile(cfg, lo.modelPath)
+	guessDefaultsFromFile(cfg, lo.modelPath, ctx)
 }
 
 func (c *BackendConfig) Validate() bool {
@@ -565,7 +544,7 @@ func (c *BackendConfig) GuessUsecases(u BackendConfigUsecases) bool {
 		}
 	}
 	if (u & FLAG_TTS) == FLAG_TTS {
-		ttsBackends := []string{"piper", "transformers-musicgen", "parler-tts"}
+		ttsBackends := []string{"bark-cpp", "parler-tts", "piper", "transformers-musicgen"}
 		if !slices.Contains(ttsBackends, c.Backend) {
 			return false
 		}
